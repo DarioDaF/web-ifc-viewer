@@ -27,6 +27,7 @@ import {
   IFCWALLSTANDARDCASE,
   IFCWINDOW
 } from 'web-ifc';
+import { Subset } from 'web-ifc-three/IFC/components/subsets/SubsetManager';
 import { IfcManager } from '../../ifc';
 import { IfcContext } from '../../context';
 
@@ -266,7 +267,12 @@ export class ClippingEdges {
         applyBVH: true
       });
     }
-    const subset = manager.getSubset(modelID, ClippingEdges.invisibleMaterial, styleName);
+    let subset: Subset | null = null;
+    try {
+      subset = manager.getSubset(modelID, ClippingEdges.invisibleMaterial, styleName);
+    } catch {
+      // Continue so subset is not set
+    }
     if (subset) {
       manager.clearSubset(modelID, styleName, ClippingEdges.invisibleMaterial);
       return subset;
@@ -329,7 +335,9 @@ export class ClippingEdges {
     // @ts-ignore
     posAttr.array.fill(0);
 
-    const notEmptyMeshes = style.meshes.filter((subset) => subset.geometry);
+    const notEmptyMeshes = style.meshes.filter(
+      (subset) => subset.geometry && subset.geometry.getAttribute('position')
+    );
     notEmptyMeshes.forEach((mesh) => {
       if (!mesh.geometry.boundsTree)
         throw new Error('Boundstree not found for clipping edges subset.');
